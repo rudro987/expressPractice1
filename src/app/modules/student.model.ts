@@ -94,61 +94,74 @@ const localGuardianSchema = new Schema<TLocalGuardian>({
   },
 });
 
-const studentSchema = new Schema<TStudent, StudentModel>({
-  id: { type: String, required: true, unique: true },
-  name: {
-    type: studentNameSchema,
-    required: [true, 'Name is required'],
-  },
-  password: {
-    type: String,
-    required: [true, 'Password is required'],
-    maxlength: [20, 'Password can not be more then 20 chatacters'],
-  },
-  gender: {
-    type: String,
-    enum: {
-      values: ['male', 'female', 'other'],
-      message: '{VALUE} is not valid',
+const studentSchema = new Schema<TStudent, StudentModel>(
+  {
+    id: { type: String, required: true, unique: true },
+    name: {
+      type: studentNameSchema,
+      required: [true, 'Name is required'],
     },
-    required: true,
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      maxlength: [20, 'Password can not be more then 20 chatacters'],
+    },
+    gender: {
+      type: String,
+      enum: {
+        values: ['male', 'female', 'other'],
+        message: '{VALUE} is not valid',
+      },
+      required: true,
+    },
+    dateOfBirth: { type: String },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      // validate: {
+      //   validator: (value: string) => validator.isEmail(value),
+      //   message: '{VALUE} is not a valid email type',
+      // },
+    },
+    contactNo: { type: String, required: true },
+    emergencyContactNo: { type: String, required: true },
+    bloodGroup: {
+      type: String,
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+    },
+    presenetAddress: { type: String, required: true },
+    permanentAddress: { type: String, required: true },
+    guardian: {
+      type: guardianSchema,
+      required: true,
+    },
+    localGuardian: {
+      type: localGuardianSchema,
+      required: true,
+    },
+    profileImg: { type: String },
+    isActive: {
+      type: String,
+      enum: ['active', 'blocked'],
+      default: 'active',
+    },
+    isDelete: {
+      type: Boolean,
+      default: false,
+    },
   },
-  dateOfBirth: { type: String },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    // validate: {
-    //   validator: (value: string) => validator.isEmail(value),
-    //   message: '{VALUE} is not a valid email type',
-    // },
+  {
+    toJSON: {
+      virtuals: true,
+    },
   },
-  contactNo: { type: String, required: true },
-  emergencyContactNo: { type: String, required: true },
-  bloodGroup: {
-    type: String,
-    enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-  },
-  presenetAddress: { type: String, required: true },
-  permanentAddress: { type: String, required: true },
-  guardian: {
-    type: guardianSchema,
-    required: true,
-  },
-  localGuardian: {
-    type: localGuardianSchema,
-    required: true,
-  },
-  profileImg: { type: String },
-  isActive: {
-    type: String,
-    enum: ['active', 'blocked'],
-    default: 'active',
-  },
-  isDelete: {
-    type: Boolean,
-    default: false,
-  },
+);
+
+//mongoose virtual implementation
+
+studentSchema.virtual('fullName').get(function (this: TStudent) {
+  return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
 });
 
 // pre save middleware/hook : will work on create() / save()
