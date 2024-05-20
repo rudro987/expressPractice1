@@ -148,7 +148,7 @@ const studentSchema = new Schema<TStudent, StudentModel>({
   isDelete: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 // pre save middleware/hook : will work on create() / save()
@@ -156,13 +156,12 @@ const studentSchema = new Schema<TStudent, StudentModel>({
 studentSchema.pre('save', async function (next) {
   //hashing password and save into db
   const user = this;
-  
+
   user.password = await bcrypt.hash(
     user.password,
-    Number(config.bcrypt_salt_round)
+    Number(config.bcrypt_salt_round),
   );
   next();
-  
 });
 
 //post save middleware/hook
@@ -172,18 +171,22 @@ studentSchema.post('save', function (doc, next) {
   next();
 });
 
-
-// Query middleware
+// Query middleware : will work on find() / findOne() / findById()
 
 studentSchema.pre('find', function (next) {
-  console.log(this);
-  
+  this.find({ isDeleted: { $ne: true } });
   next();
 });
 
+studentSchema.pre('findOne', function (next) {
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
 
-
-
+studentSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+  next();
+});
 
 //creating a custom instance method
 
