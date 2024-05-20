@@ -1,13 +1,15 @@
 import { Schema, model } from 'mongoose';
-import validator from 'validator';
+// import validator from 'validator';
 import {
   TGuardian,
   TLocalGuardian,
   TStudent,
-  StudentMethods,
+  // StudentMethods,
   StudentModel,
   TStudentName,
 } from './student/student.interface';
+import bcrypt from 'bcrypt';
+import config from '../config';
 
 const studentNameSchema = new Schema<TStudentName>({
   firstName: {
@@ -92,11 +94,16 @@ const localGuardianSchema = new Schema<TLocalGuardian>({
   },
 });
 
-const studentSchema = new Schema<TStudent, StudentModel, StudentMethods>({
+const studentSchema = new Schema<TStudent, StudentModel>({
   id: { type: String, required: true, unique: true },
   name: {
     type: studentNameSchema,
     required: [true, 'Name is required'],
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    maxlength: [20, 'Password can not be more then 20 chatacters'],
   },
   gender: {
     type: String,
@@ -138,9 +145,56 @@ const studentSchema = new Schema<TStudent, StudentModel, StudentMethods>({
     enum: ['active', 'blocked'],
     default: 'active',
   },
+  isDelete: {
+    type: Boolean,
+    default: false,
+  }
 });
 
-studentSchema.methods.isStudentExists = async function (id: string) {
+// pre save middleware/hook : will work on create() / save()
+
+studentSchema.pre('save', async function (next) {
+  //hashing password and save into db
+  const user = this;
+  
+  user.password = await bcrypt.hash(
+    user.password,
+    Number(config.bcrypt_salt_round)
+  );
+  next();
+  
+});
+
+//post save middleware/hook
+
+studentSchema.post('save', function (doc, next) {
+  doc.password = '';
+  next();
+});
+
+
+// Query middleware
+
+studentSchema.pre('find', function (next) {
+  console.log(this);
+  
+  next();
+});
+
+
+
+
+
+//creating a custom instance method
+
+// studentSchema.methods.isStudentExists = async function (id: string) {
+//   const existingStudent = await Student.findOne({ id });
+//   return existingStudent;
+// };
+
+//creating a custom static method
+
+studentSchema.statics.isStudentExists = async function (id: string) {
   const existingStudent = await Student.findOne({ id });
   return existingStudent;
 };
